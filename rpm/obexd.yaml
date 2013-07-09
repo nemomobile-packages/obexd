@@ -25,6 +25,7 @@ PkgConfigBR:
 
 SetupOptions: -q -n %{name}-%{version}/%{name}
 Configure: reconfigure
+ConfigOptions: --enable-usb --enable-pcsuite
 AutoSubPackages:
     - devel
 
