@@ -7,7 +7,6 @@ License:    GPLv2+
 URL:        http://www.bluez.org/
 Source0:    http://www.kernel.org/pub/linux/bluetooth/obexd-%{version}.tar.gz
 Source100:  obexd.yaml
-Patch1:     fix_sync_profile_crash.patch
 BuildRequires:  pkgconfig(openobex)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -40,8 +39,6 @@ Development files for %{name}.
 %prep
 %setup -q -n %{name}-%{version}/%{name}
 
-# fix_sync_profile_crash.patch
-%patch1 -p1
 
 %build
 ./bootstrap
@@ -55,11 +52,10 @@ make %{?jobs:-j%jobs}
 rm -rf %{buildroot}
 %make_install
 
-chmod -x test/send-files
 
 %files
 %defattr(-,root,root,-)
-%doc README test/send-files doc/client-api.txt COPYING AUTHORS
+%doc README doc/client-api.txt COPYING AUTHORS
 %{_libexecdir}/obex-client
 %{_datadir}/dbus-1/services/obex-client.service
 
@@ -73,4 +69,4 @@ chmod -x test/send-files
 
 %files devel
 %defattr(-,root,root,-)
-%doc  test/send-files doc/client-api.txt
+%doc  doc/client-api.txt
