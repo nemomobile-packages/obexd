@@ -6,12 +6,14 @@ Group:      System/Daemons
 License:    GPLv2+
 URL:        http://www.bluez.org/
 Source0:    http://www.kernel.org/pub/linux/bluetooth/obexd-%{version}.tar.gz
-Source100:  obexd.yaml
-BuildRequires:  pkgconfig(openobex)
+Source1:    obexd-wrapper
+Source2:    obexd.conf
+BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
 BuildRequires:  pkgconfig(bluez) >= 4.0
 BuildRequires:  pkgconfig(libical)
+Requires:       obex-capability
 
 %description
 obexd contains obex-client, a D-Bus service to allow sending files
@@ -42,7 +44,7 @@ Development files for %{name}.
 
 %build
 ./bootstrap
-
+sed -i 's/ovi_suite/pc_suite/' plugins/usb.c
 %reconfigure --disable-static \
     --enable-usb --enable-pcsuite
 
@@ -51,6 +53,10 @@ make %{?jobs:-j%jobs}
 %install
 rm -rf %{buildroot}
 %make_install
+install -m755 -D %{SOURCE1} %{buildroot}/%{_libexecdir}/obexd-wrapper
+install -m644 -D %{SOURCE2} %{buildroot}/%{_sysconfdir}/obexd.conf
+sed -i 's,/usr/libexec/obexd,/usr/libexec/obexd-wrapper,' \
+    %{buildroot}/%{_datadir}/dbus-1/services/obexd.service
 
 
 %files
@@ -62,7 +68,9 @@ rm -rf %{buildroot}
 
 %files server
 %defattr(-,root,root,-)
+%config %{_sysconfdir}/obexd.conf
 %{_libexecdir}/obexd
+%{_libexecdir}/obexd-wrapper
 %{_datadir}/dbus-1/services/obexd.service
 #%{_libdir}/obex/plugins/*.so
 
