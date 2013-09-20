@@ -8,6 +8,7 @@ URL:        http://www.bluez.org/
 Source0:    http://www.kernel.org/pub/linux/bluetooth/obexd-%{version}.tar.gz
 Source1:    obexd-wrapper
 Source2:    obexd.conf
+Patch0:     FTP-fix-directory-creation-failure.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -41,6 +42,8 @@ Development files for %{name}.
 %prep
 %setup -q -n %{name}-%{version}/%{name}
 
+# FTP-fix-directory-creation-failure.patch
+%patch0 -p1
 
 %build
 ./bootstrap
