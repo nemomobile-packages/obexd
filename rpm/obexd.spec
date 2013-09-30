@@ -10,6 +10,7 @@ Source1:    obexd-wrapper
 Source2:    obexd.conf
 Patch0:     FTP-fix-directory-creation-failure.patch
 Patch1:     OPP-disconnect-request-on-client-exit.patch
+Patch2:     OPP-disable-SRM.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -47,6 +48,8 @@ Development files for %{name}.
 %patch0 -p1
 # OPP-disconnect-request-on-client-exit.patch
 %patch1 -p1
+# OPP-disable-SRM.patch
+%patch2 -p1
 
 %build
 ./bootstrap
