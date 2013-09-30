@@ -66,6 +66,7 @@ install -m755 -D %{SOURCE1} %{buildroot}/%{_libexecdir}/obexd-wrapper
 install -m644 -D %{SOURCE2} %{buildroot}/%{_sysconfdir}/obexd.conf
 sed -i 's,/usr/libexec/obexd,/usr/libexec/obexd-wrapper,' \
     %{buildroot}/%{_datadir}/dbus-1/services/obexd.service
+mkdir -p %{buildroot}/%{_sysconfdir}/obexd/{plugins,noplugins}
 
 
 %files
@@ -78,10 +79,12 @@ sed -i 's,/usr/libexec/obexd,/usr/libexec/obexd-wrapper,' \
 %files server
 %defattr(-,root,root,-)
 %config %{_sysconfdir}/obexd.conf
+%dir %{_sysconfdir}/obexd/
+%dir %{_sysconfdir}/obexd/plugins/
+%dir %{_sysconfdir}/obexd/noplugins/
 %{_libexecdir}/obexd
 %{_libexecdir}/obexd-wrapper
 %{_datadir}/dbus-1/services/obexd.service
-#%{_libdir}/obex/plugins/*.so
 
 
 %files devel
