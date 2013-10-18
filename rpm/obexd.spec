@@ -12,6 +12,7 @@ Patch0:     FTP-fix-directory-creation-failure.patch
 Patch1:     OPP-disconnect-request-on-client-exit.patch
 Patch2:     OPP-disable-SRM.patch
 Patch3:     OPP-supported-format-list.patch
+Patch4:     OPP-version.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -53,6 +54,8 @@ Development files for %{name}.
 %patch2 -p1
 # OPP-supported-format-list.patch
 %patch3 -p1
+# OPP-version.patch
+%patch4 -p1
 
 %build
 ./bootstrap
