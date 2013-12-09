@@ -1,6 +1,6 @@
 diff -Naur obexd.orig/Makefile.am obexd/Makefile.am
---- obexd.orig/Makefile.am	2013-11-18 08:01:13.845244096 +0200
-+++ obexd/Makefile.am	2013-11-18 09:35:15.933051478 +0200
+--- obexd.orig/Makefile.am	2013-12-09 11:33:01.755615433 +0200
++++ obexd/Makefile.am	2013-12-09 11:33:15.879614922 +0200
 @@ -149,6 +149,7 @@
  			src/obexd.service.in client/obex-client.service.in \
  			plugins/phonebook-dummy.c plugins/phonebook-ebook.c \
@@ -10,8 +10,8 @@ diff -Naur obexd.orig/Makefile.am obexd/Makefile.am
  
  DISTCHECK_CONFIGURE_FLAGS = --enable-client --enable-server
 diff -Naur obexd.orig/plugins/pbap.c obexd/plugins/pbap.c
---- obexd.orig/plugins/pbap.c	2013-11-18 08:01:13.845244096 +0200
-+++ obexd/plugins/pbap.c	2013-11-29 17:04:15.835157354 +0200
+--- obexd.orig/plugins/pbap.c	2013-12-09 11:33:01.759615433 +0200
++++ obexd/plugins/pbap.c	2013-12-09 11:33:15.879614922 +0200
 @@ -233,6 +233,7 @@
  
  	phonebooksize = htons(vcards);
@@ -31,8 +31,8 @@ diff -Naur obexd.orig/plugins/pbap.c obexd/plugins/pbap.c
  		return g_obex_apparam_encode(obj->apparam, buf, mtu);
 diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailfish.c
 --- obexd.orig/plugins/phonebook-sailfish.c	1970-01-01 02:00:00.000000000 +0200
-+++ obexd/plugins/phonebook-sailfish.c	2013-11-29 13:41:25.037554712 +0200
-@@ -0,0 +1,657 @@
++++ obexd/plugins/phonebook-sailfish.c	2013-12-09 12:48:32.431451448 +0200
+@@ -0,0 +1,665 @@
 +/*
 + *  Phonebook access through D-Bus vCard and call history service
 + *
@@ -123,6 +123,9 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +		(g_strcmp0(name, PB_CALLS_MISSED) == 0 ||
 +			g_strcmp0(name, PB_CALLS_MISSED_FOLDER) == 0)
 +		? "missed" :
++		(g_strcmp0(name, PB_CALLS_COMBINED) == 0 ||
++			g_strcmp0(name, PB_CALLS_COMBINED_FOLDER) == 0)
++		? "combined" :
 +		NULL;
 +}
 +
@@ -233,12 +236,12 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +	(data->process_begin)(data);
 +
 +	if (dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
-+		// ...
++		DBG("D-Bus error");
 +		goto done;
 +	}
 +
 +	if (g_strcmp0(dbus_message_get_signature(reply), "(ssss)") != 0) {
-+		// ...
++		DBG("Unexpected D-Bus signature");
 +		goto done;
 +	}
 +
@@ -256,6 +259,8 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +	(data->process)(data, id, name, tel, vcard);
 +
 +done:
++	DBG("Finalizing. ");
++
 +	dbus_message_unref(reply);
 +	dbus_pending_call_unref(data->pend);
 +	data->pend = NULL;
@@ -480,7 +485,8 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +
 +	} else if (g_strcmp0(data->name, PB_CALLS_INCOMING) == 0 ||
 +		g_strcmp0(data->name, PB_CALLS_OUTGOING) == 0 ||
-+		g_strcmp0(data->name, PB_CALLS_MISSED) == 0) {
++		g_strcmp0(data->name, PB_CALLS_MISSED) == 0 ||
++		g_strcmp0(data->name, PB_CALLS_COMBINED) == 0) {
 +
 +		const char *type = name_to_calltype(data->name);
 +
@@ -542,7 +548,8 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +	if (g_strcmp0(folder, PB_CONTACTS_FOLDER) &&
 +		g_strcmp0(folder, PB_CALLS_INCOMING_FOLDER) &&
 +		g_strcmp0(folder, PB_CALLS_OUTGOING_FOLDER) &&
-+		g_strcmp0(folder, PB_CALLS_MISSED_FOLDER)) {
++		g_strcmp0(folder, PB_CALLS_MISSED_FOLDER) &&
++		g_strcmp0(folder, PB_CALLS_COMBINED_FOLDER)) {
 +		if (err)
 +			*err = -ENOENT;
 +		return NULL;
@@ -613,7 +620,8 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +	if (g_strcmp0(name, PB_CONTACTS_FOLDER) &&
 +		g_strcmp0(name, PB_CALLS_INCOMING_FOLDER) &&
 +		g_strcmp0(name, PB_CALLS_OUTGOING_FOLDER) &&
-+		g_strcmp0(name, PB_CALLS_MISSED_FOLDER)) {
++		g_strcmp0(name, PB_CALLS_MISSED_FOLDER) &&
++		g_strcmp0(name, PB_CALLS_COMBINED_FOLDER)) {
 +		if (err)
 +			*err = -ENOENT;
 +		return NULL;
