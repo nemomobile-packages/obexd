@@ -14,6 +14,7 @@ Patch2:     OPP-disable-SRM.patch
 Patch3:     OPP-supported-format-list.patch
 Patch4:     OPP-version.patch
 Patch5:     USB-retry-tty.patch
+Patch6:     FTP-fix-close-pipe-fds-issue.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -59,6 +60,8 @@ Development files for %{name}.
 %patch4 -p1
 # USB-retry-tty.patch
 %patch5 -p1
+# FTP-fix-close-pipe-fds-issue.patch
+%patch6 -p1
 
 %build
 ./bootstrap

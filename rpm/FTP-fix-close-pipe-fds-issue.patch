@@ -1,0 +1,35 @@
+diff -Naur obexd.orig/plugins/filesystem.c obexd/plugins/filesystem.c
+--- obexd.orig/plugins/filesystem.c	2013-12-10 16:50:47.970010000 +0800
++++ obexd/plugins/filesystem.c	2013-12-10 17:04:18.000000000 +0800
+@@ -616,14 +616,29 @@
+ static ssize_t capability_read(void *object, void *buf, size_t count)
+ {
+ 	struct capability_object *obj = object;
+-
++	ssize_t length;
+ 	if (obj->buffer)
+ 		return string_read(obj->buffer, buf, count);
+ 
+ 	if (obj->pid >= 0)
+ 		return -EAGAIN;
+ 
+-	return read(obj->output, buf, count);
++	length = read(obj->output, buf, count);
++	
++	/*if "length == 0" means finish the read, so close pipe fds*/
++	if (length == 0){
++		DBG("Close output & err pipe fds");
++		if (obj->output > 0) {
++			close(obj->output);
++			obj->output = -1;
++		}
++		if (obj->err > 0) {
++			close(obj->err);
++			obj->err = -1;
++		}
++	}
++	
++	return length;
+ }
+ 
+ static int capability_close(void *object)
