@@ -1,0 +1,38 @@
+diff -Naur obexd.orig/plugins/filesystem.c obexd/plugins/filesystem.c
+--- obexd.orig/plugins/filesystem.c	2013-12-11 14:57:16.004925000 +0800
++++ obexd/plugins/filesystem.c	2013-12-11 15:15:56.000000000 +0800
+@@ -613,6 +613,25 @@
+ 	return string_read(object, buf, count);
+ }
+ 
++/*This function should be called after get capability object are done.
++  Close output & err pipe fds and free struct capability_object*/
++static void capability_deallocation(struct capability_object *obj )
++{
++	DBG("");
++	if (obj->output > 0) {
++		DBG("Close output pipe fds");
++		close(obj->output);
++		obj->output = -1;
++	}
++	if (obj->err > 0) {
++		DBG("Close err pipe fds");
++		close(obj->err);
++		obj->err = -1;
++	}
++	
++	g_free(obj);
++}
++
+ static ssize_t capability_read(void *object, void *buf, size_t count)
+ {
+ 	struct capability_object *obj = object;
+@@ -649,7 +668,7 @@
+ 	if (obj->buffer != NULL)
+ 		g_string_free(obj->buffer, TRUE);
+ 
+-	g_free(obj);
++	capability_deallocation(obj);
+ 
+ 	return err;
+ }
