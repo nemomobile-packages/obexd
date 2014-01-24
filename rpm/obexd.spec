@@ -101,7 +101,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/obexd/{plugins,noplugins}
 %dir %{_sysconfdir}/obexd/
 %dir %{_sysconfdir}/obexd/plugins/
 %dir %{_sysconfdir}/obexd/noplugins/
-%{_libexecdir}/obexd
+%attr(2755,root,privileged) %{_libexecdir}/obexd
 %{_libexecdir}/obexd-wrapper
 %{_datadir}/dbus-1/services/obexd.service
 

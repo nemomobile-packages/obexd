@@ -398,8 +398,8 @@ diff -Naur obexd.orig/plugins/phonebook.h obexd/plugins/phonebook.h
   * Finalizes request to phonebook back-end and deallocates associated
 diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailfish.c
 --- obexd.orig/plugins/phonebook-sailfish.c	1970-01-01 02:00:00.000000000 +0200
-+++ obexd/plugins/phonebook-sailfish.c	2014-01-22 09:02:36.821917038 +0200
-@@ -0,0 +1,774 @@
++++ obexd/plugins/phonebook-sailfish.c	2014-01-24 14:26:29.427152114 +0200
+@@ -0,0 +1,848 @@
 +/*
 + *  Phonebook access through D-Bus vCard and call history service
 + *
@@ -459,6 +459,40 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +#define PB_FORMAT_VCARD21 0
 +#define PB_FORMAT_VCARD30 1
 +
++#define FILTER_BIT_MAX 28
++
++static const char *filter_name[FILTER_BIT_MAX] = {
++        "VERSION",
++        "FN",
++        "N",
++        "PHOTO",
++        "BDAY",
++        "ADR",
++        "LABEL",
++        "TEL",
++        "EMAIL",
++        "MAILER",
++        "TZ",
++        "GEO",
++        "TITLE",
++        "ROLE",
++        "LOGO",
++        "AGENT",
++        "ORG",
++        "NOTE",
++        "REV",
++        "SOUND",
++        "URL",
++        "UID",
++        "KEY",
++        "NICKNAME",
++        "CATEGORIES",
++        "PROID",
++        "CLASS",
++        "SORT-STRING",
++        "X-IRMC-CALL-DATETIME"
++};
++
 +static DBusConnection *conn = NULL;
 +
 +struct phonebook_session
@@ -491,6 +525,36 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +
 +	guint32 newmissedcalls;
 +};
++
++static void append_filter(DBusMessage *msg, uint8_t format, uint64_t filter)
++{
++	DBusMessageIter iter;
++	DBusMessageIter array_iter;
++
++	dbus_message_iter_init_append(msg, &iter);
++	dbus_message_iter_open_container(&iter,
++					DBUS_TYPE_ARRAY,
++					"s",
++					&array_iter);
++	if (filter != 0) {
++		uint64_t i;
++
++		filter |= 
++			format == PB_FORMAT_VCARD30
++			? 0x87 /* VERSION, N, FN, TEL */
++			: 0x85 /* VERSION, N, TEL */;
++		for (i = 0; i < FILTER_BIT_MAX; i++) {
++			if (filter & (1ULL << i)) {
++				const char *f = filter_name[i];
++				dbus_message_iter_append_basic(&iter,
++							DBUS_TYPE_STRING,
++							&f);
++			}
++		}
++	}
++	dbus_message_iter_close_container(&iter,
++					&array_iter);
++}
 +
 +static const char *name_to_calltype(const char *name)
 +{
@@ -948,6 +1012,9 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +						DBUS_TYPE_UINT32, &len32,
 +						DBUS_TYPE_STRING, &fmt,
 +						DBUS_TYPE_INVALID);
++			append_filter(msg,
++				data->params->format,
++				data->params->filter);
 +			cb = fetch_many_cb;
 +		}
 +
@@ -985,6 +1052,9 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +						DBUS_TYPE_UINT32, &len32,
 +						DBUS_TYPE_STRING, &fmt,
 +						DBUS_TYPE_INVALID);
++			append_filter(msg,
++				data->params->format,
++				data->params->filter);
 +			cb = fetch_many_cb;
 +		}
 +
@@ -1049,6 +1119,7 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +					DBUS_TYPE_STRING, &id,
 +					DBUS_TYPE_STRING, &fmt,
 +					DBUS_TYPE_INVALID);
++		append_filter(msg, data->params->format, data->params->filter);
 +	} else {
 +		const char *type = name_to_calltype(folder);
 +		DBG("Fetching call history entry");
@@ -1062,6 +1133,7 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +					DBUS_TYPE_STRING, &id,
 +					DBUS_TYPE_STRING, &fmt,
 +					DBUS_TYPE_INVALID);
++		append_filter(msg, data->params->format, data->params->filter);
 +	}
 +
 +	dbus_connection_send_with_reply(conn,
@@ -1126,6 +1198,7 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +					DBUS_TYPE_UINT32, &len32,
 +					DBUS_TYPE_STRING, &fmt,
 +					DBUS_TYPE_INVALID);
++		append_filter(msg, data->params->format, data->params->filter);
 +	} else {
 +		const char *type = name_to_calltype(name);
 +
@@ -1141,6 +1214,7 @@ diff -Naur obexd.orig/plugins/phonebook-sailfish.c obexd/plugins/phonebook-sailf
 +					DBUS_TYPE_UINT32, &len32,
 +					DBUS_TYPE_STRING, &fmt,
 +					DBUS_TYPE_INVALID);
++		append_filter(msg, data->params->format, data->params->filter);
 +	}
 +
 +	dbus_connection_send_with_reply(conn,
