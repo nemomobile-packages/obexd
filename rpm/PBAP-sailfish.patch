@@ -11,15 +11,27 @@ diff -Naur obexd.orig/Makefile.am obexd/Makefile.am
  DISTCHECK_CONFIGURE_FLAGS = --enable-client --enable-server
 diff -Naur obexd.orig/plugins/pbap.c obexd/plugins/pbap.c
 --- obexd.orig/plugins/pbap.c	2014-01-17 08:52:59.481060135 +0200
-+++ obexd/plugins/pbap.c	2014-01-28 09:39:45.715142747 +0200
-@@ -233,6 +233,7 @@
++++ obexd/plugins/pbap.c	2014-01-29 09:55:02.400282054 +0200
+@@ -231,8 +231,9 @@
  
- 	phonebooksize = htons(vcards);
+ 	DBG("vcards %d", vcards);
+ 
+-	phonebooksize = htons(vcards);
++	phonebooksize = vcards;
  
 +	pbap->obj->firstpacket = TRUE;
  	pbap->obj->apparam = g_obex_apparam_set_uint16(NULL, PHONEBOOKSIZE_TAG,
  								phonebooksize);
  
+@@ -408,7 +409,7 @@
+ 
+ 	if (max == 0) {
+ 		/* Ignore all other parameter and return PhoneBookSize */
+-		uint16_t size = htons(g_slist_length(pbap->cache.entries));
++		uint16_t size = g_slist_length(pbap->cache.entries);
+ 
+ 		pbap->obj->apparam = g_obex_apparam_set_uint16(
+ 							pbap->obj->apparam,
 @@ -866,14 +867,13 @@
  								uint8_t *hi)
  {
