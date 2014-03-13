@@ -17,6 +17,7 @@ Patch5:     USB-retry-tty.patch
 Patch6:     FTP-fix-close-pipe-fds-issue.patch
 Patch7:     IRMC-fix-folder-for-luid-requests.patch
 Patch8:     PBAP-sailfish.patch
+Patch9:     OPP-reject-unsupported.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -68,13 +69,16 @@ Development files for %{name}.
 %patch7 -p1
 # PBAP-sailfish.patch
 %patch8 -p1
+# OPP-reject-unsupported.patch
+%patch9 -p1
 
 %build
 ./bootstrap
 sed -i 's/ovi_suite/pc_suite/' plugins/usb.c
 %reconfigure --disable-static \
     --enable-usb --enable-pcsuite \
-    --with-phonebook=sailfish
+    --with-phonebook=sailfish \
+    --with-contentfilter=helperapp
 
 make %{?jobs:-j%jobs}
 
