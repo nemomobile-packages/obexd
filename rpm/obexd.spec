@@ -16,6 +16,7 @@ Patch4:     OPP-version.patch
 Patch5:     USB-retry-tty.patch
 Patch6:     FTP-fix-close-pipe-fds-issue.patch
 Patch7:     IRMC-fix-folder-for-luid-requests.patch
+Patch8:     PBAP-sailfish.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -65,12 +66,15 @@ Development files for %{name}.
 %patch6 -p1
 # IRMC-fix-folder-for-luid-requests.patch
 %patch7 -p1
+# PBAP-sailfish.patch
+%patch8 -p1
 
 %build
 ./bootstrap
 sed -i 's/ovi_suite/pc_suite/' plugins/usb.c
 %reconfigure --disable-static \
-    --enable-usb --enable-pcsuite
+    --enable-usb --enable-pcsuite \
+    --with-phonebook=sailfish
 
 make %{?jobs:-j%jobs}
 
@@ -97,7 +101,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/obexd/{plugins,noplugins}
 %dir %{_sysconfdir}/obexd/
 %dir %{_sysconfdir}/obexd/plugins/
 %dir %{_sysconfdir}/obexd/noplugins/
-%{_libexecdir}/obexd
+%attr(2755,root,privileged) %{_libexecdir}/obexd
 %{_libexecdir}/obexd-wrapper
 %{_datadir}/dbus-1/services/obexd.service
 
