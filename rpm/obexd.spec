@@ -18,6 +18,7 @@ Patch6:     FTP-fix-close-pipe-fds-issue.patch
 Patch7:     IRMC-fix-folder-for-luid-requests.patch
 Patch8:     PBAP-sailfish.patch
 Patch9:     OPP-reject-unsupported.patch
+Patch10:    OPP-unsupported-type-error-code.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -71,6 +72,8 @@ Development files for %{name}.
 %patch8 -p1
 # OPP-reject-unsupported.patch
 %patch9 -p1
+# OPP-unsupported-type-error-code.patch
+%patch10 -p1
 
 %build
 ./bootstrap
