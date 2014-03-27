@@ -1,0 +1,24 @@
+diff -Naur obexd.orig/gobex/gobex.c obexd/gobex/gobex.c
+--- obexd.orig/gobex/gobex.c	2014-03-27 14:47:30.028613580 +0200
++++ obexd/gobex/gobex.c	2014-03-27 15:00:07.320645361 +0200
+@@ -1509,6 +1509,8 @@
+ 	case -ENOTEMPTY:
+ 	case -EEXIST:
+ 		return G_OBEX_RSP_PRECONDITION_FAILED;
++	case -EMEDIUMTYPE:
++		return G_OBEX_RSP_UNSUPPORTED_MEDIA_TYPE;
+ 	default:
+ 		return G_OBEX_RSP_INTERNAL_SERVER_ERROR;
+ 	}
+diff -Naur obexd.orig/plugins/opp.c obexd/plugins/opp.c
+--- obexd.orig/plugins/opp.c	2014-03-27 14:47:30.028613580 +0200
++++ obexd/plugins/opp.c	2014-03-27 14:56:27.736636146 +0200
+@@ -127,7 +127,7 @@
+ 		return -EBADR;
+ 
+ 	if (!contentfilter_receive_file(t))
+-		return -EBADR;
++		return -EMEDIUMTYPE;
+ 
+ 	if (obex_option_auto_accept()) {
+ 		folder = g_strdup(obex_option_root_folder());
