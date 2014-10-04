@@ -51,7 +51,7 @@ Requires:   %{name} = %{version}-%{release}
 Development files for %{name}.
 
 %prep
-%setup -q -n %{name}-%{version}/%{name}
+%setup -q -n %{name}-%{version}/obexd
 
 # FTP-fix-directory-creation-failure.patch
 %patch0 -p1
