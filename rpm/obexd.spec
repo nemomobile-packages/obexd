@@ -21,6 +21,7 @@ Patch9:     OPP-reject-unsupported.patch
 Patch10:    OPP-unsupported-type-error-code.patch
 Patch11:    PBAP-vcardlisting-cache-flush.patch
 Patch12:    FIX-compilation-gcc483.patch
+Patch13:    PBAP-request-cleanup.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -80,6 +81,8 @@ Development files for %{name}.
 %patch11 -p1
 # FIX-compilation-gcc483.patch
 %patch12 -p1
+# PBAP-request-cleanup.patch
+%patch13 -p1
 %build
 ./bootstrap
 sed -i 's/ovi_suite/pc_suite/' plugins/usb.c
