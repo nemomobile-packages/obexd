@@ -30,6 +30,7 @@
 #include <glib.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <unistd.h>
 
 #include <gobex/gobex.h>
 #include <gobex/gobex-apparam.h>
