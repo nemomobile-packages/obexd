@@ -74,7 +74,7 @@
     <sequence>							\
       <sequence>						\
         <uuid value=\"0x1105\"/>				\
-        <uint16 value=\"0x0102\" name=\"version\"/>		\
+        <uint16 value=\"0x%04x\" name=\"version\"/>		\
       </sequence>						\
     </sequence>							\
   </attribute>							\
@@ -88,10 +88,13 @@
 %s%s%s%s%s%s%s							\
     </sequence>							\
   </attribute>							\
-  <attribute id=\"0x0200\">					\
-    <uint16 value=\"%%u\" name=\"psm\"/>			\
+%s</record>"
+
+#define OPP_RECORD_PSM						\
+"  <attribute id=\"0x0200\">					\
+    <uint16 value=\"%u\" name=\"psm\"/>				\
   </attribute>							\
-</record>"
+"
 
 static void *opp_connect(struct obex_session *os, int *err)
 {
@@ -216,7 +219,6 @@ static struct obex_service_driver driver = {
 	.name = "Object Push server",
 	.service = OBEX_OPP,
 	.channel = OPP_CHANNEL,
-	.port = OBEX_PORT_RANDOM,
 	.record = NULL,
 	.connect = opp_connect,
 	.progress = opp_progress,
@@ -234,9 +236,12 @@ static int opp_init(void)
 		vnote = TRUE, vmsg = TRUE,
 		any = TRUE;
 	GKeyFile *config = NULL;
+	GError *err = NULL;
 	gchar **list = NULL;
+	gchar *s = NULL;
 	int i;
 	int ret = 0;
+	uint16_t version = 0x0100;
 
 	config = g_key_file_new();
 	if (config == NULL)
@@ -268,18 +273,33 @@ static int opp_init(void)
 			any = FALSE;
 	}
 
+	s = g_key_file_get_string(config, "OPP", "Version", &err);
+	if (err) {
+		DBG("opp.conf: %s", err->message);
+		g_error_free(err);
+		err = NULL;
+	} else {
+		version = strtol(s, NULL, 16);
+		g_free(s);
+	}
+
 init:
 	if (asprintf(&driver.record, OPP_RECORD,
+			version,
 			vcard21 ? "      <uint8 value=\"0x01\"/>" : "",
 			vcard30 ? "      <uint8 value=\"0x02\"/>" : "",
 			vcal10  ? "      <uint8 value=\"0x03\"/>" : "",
 			ical20  ? "      <uint8 value=\"0x04\"/>" : "",
 			vnote   ? "      <uint8 value=\"0x05\"/>" : "",
 			vmsg    ? "      <uint8 value=\"0x06\"/>" : "",
-			any     ? "      <uint8 value=\"0xff\"/>" : "") < 0) {
+			any     ? "      <uint8 value=\"0xff\"/>" : "",
+			version >= 0x0102 ? OPP_RECORD_PSM : "") < 0) {
 		driver.record = NULL;
 		ret = -ENOMEM;
 	}
+
+	if (version >= 0x0102)
+		driver.port = OBEX_PORT_RANDOM;
 
 	g_strfreev(list);
 	g_key_file_free(config);
