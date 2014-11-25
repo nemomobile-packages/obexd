@@ -154,6 +154,17 @@ fi
 
 AC_SUBST([PHONEBOOK_DRIVER], [phonebook-${phonebook_driver}.c])
 
+contentfilter_driver=dummy
+AC_ARG_WITH(contentfilter, AC_HELP_STRING([--with-contentfilter=DRIVER], [select content filter driver]), [
+	if (test "${withval}" = "no"); then
+		contentfilter_driver=dummy;
+	else
+		contentfilter_driver=${withval};
+	fi
+])
+
+AC_SUBST([CONTENTFILTER_DRIVER], [contentfilter-${contentfilter_driver}.c])
+
 AC_ARG_ENABLE(usb, AC_HELP_STRING([--enable-usb],
 				[enable USB plugin]), [
 	enable_usb=${enableval}

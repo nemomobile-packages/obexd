@@ -42,6 +42,7 @@
 #include "log.h"
 #include "manager.h"
 #include "filesystem.h"
+#include "contentfilter.h"
 
 #define VCARD_TYPE "text/x-vcard"
 #define VCARD_FILE CONFIGDIR "/vcard.vcf"
@@ -123,6 +124,9 @@ static int opp_chkput(struct obex_session *os, void *user_data)
 
 	t = obex_get_name(os);
 	if (t != NULL && !is_filename(t))
+		return -EBADR;
+
+	if (!contentfilter_receive_file(t))
 		return -EBADR;
 
 	if (obex_option_auto_accept()) {
@@ -243,6 +247,10 @@ static int opp_init(void)
 	int ret = 0;
 	uint16_t version = 0x0100;
 
+	ret = contentfilter_init();
+	if (ret < 0)
+		return ret;
+
 	config = g_key_file_new();
 	if (config == NULL)
 		goto init;
@@ -317,6 +325,7 @@ static void opp_exit(void)
 		free(driver.record);
 		driver.record = NULL;
 	}
+	contentfilter_exit();
 }
 
 OBEX_PLUGIN_DEFINE(opp, opp_init, opp_exit)

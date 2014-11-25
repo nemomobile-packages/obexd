@@ -59,7 +59,8 @@ builtin_sources += plugins/ftp.c plugins/ftp.h
 
 builtin_modules += pbap
 builtin_sources += plugins/pbap.c plugins/phonebook.h \
-			plugins/vcard.h plugins/vcard.c
+			plugins/vcard.h plugins/vcard.c \
+			plugins/contentfilter.h
 
 builtin_modules += mas
 builtin_sources += plugins/mas.c plugins/messages.h \
@@ -73,6 +74,7 @@ builtin_sources += plugins/syncevolution.c
 
 builtin_nodist += plugins/phonebook.c
 builtin_nodist += plugins/messages.c
+builtin_nodist += plugins/contentfilter.c
 
 libexec_PROGRAMS += src/obexd
 
@@ -150,7 +152,9 @@ EXTRA_DIST = src/genbuiltin $(doc_files) $(test_files) \
 			plugins/phonebook-dummy.c plugins/phonebook-ebook.c \
 			plugins/phonebook-tracker.c \
 			plugins/phonebook-sailfish.c \
-			plugins/messages-dummy.c plugins/messages-tracker.c
+			plugins/messages-dummy.c plugins/messages-tracker.c \
+			plugins/contentfilter-dummy.c \
+			plugins/contentfilter-helperapp.c
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-client --enable-server
 
@@ -165,6 +169,9 @@ plugins/phonebook.c: plugins/@PHONEBOOK_DRIVER@
 	$(AM_V_GEN)$(LN_S) @abs_top_srcdir@/$< $@
 
 plugins/messages.c: plugins/@MESSAGES_DRIVER@
+	$(AM_V_GEN)$(LN_S) @abs_top_srcdir@/$< $@
+
+plugins/contentfilter.c: plugins/@CONTENTFILTER_DRIVER@
 	$(AM_V_GEN)$(LN_S) @abs_top_srcdir@/$< $@
 
 TESTS = unit/test-gobex-apparam unit/test-gobex-header unit/test-gobex-packet \
