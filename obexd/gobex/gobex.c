@@ -1295,7 +1295,7 @@ GObex *g_obex_new(GIOChannel *io, GObexTransportType transport_type,
 		obex->write = write_stream;
 		break;
 	case G_OBEX_TRANSPORT_PACKET:
-		obex->use_srm = TRUE;
+		/* obex->use_srm = TRUE; */
 		obex->read = read_packet;
 		obex->write = write_packet;
 		break;
