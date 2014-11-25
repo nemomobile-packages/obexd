@@ -8,20 +8,6 @@ URL:        http://www.bluez.org/
 Source0:    http://www.kernel.org/pub/linux/bluetooth/obexd-%{version}.tar.gz
 Source1:    obexd-wrapper
 Source2:    obexd.conf
-Patch0:     FTP-fix-directory-creation-failure.patch
-Patch1:     OPP-disconnect-request-on-client-exit.patch
-Patch2:     OPP-disable-SRM.patch
-Patch3:     OPP-supported-format-list.patch
-Patch4:     OPP-version.patch
-Patch5:     USB-retry-tty.patch
-Patch6:     FTP-fix-close-pipe-fds-issue.patch
-Patch7:     IRMC-fix-folder-for-luid-requests.patch
-Patch8:     PBAP-sailfish.patch
-Patch9:     OPP-reject-unsupported.patch
-Patch10:    OPP-unsupported-type-error-code.patch
-Patch11:    PBAP-vcardlisting-cache-flush.patch
-Patch12:    FIX-compilation-gcc483.patch
-Patch13:    PBAP-request-cleanup.patch
 BuildRequires:  automake, libtool
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(dbus-1)
@@ -55,34 +41,6 @@ Development files for %{name}.
 %prep
 %setup -q -n %{name}-%{version}/obexd
 
-# FTP-fix-directory-creation-failure.patch
-%patch0 -p1
-# OPP-disconnect-request-on-client-exit.patch
-%patch1 -p1
-# OPP-disable-SRM.patch
-%patch2 -p1
-# OPP-supported-format-list.patch
-%patch3 -p1
-# OPP-version.patch
-%patch4 -p1
-# USB-retry-tty.patch
-%patch5 -p1
-# FTP-fix-close-pipe-fds-issue.patch
-%patch6 -p1
-# IRMC-fix-folder-for-luid-requests.patch
-%patch7 -p1
-# PBAP-sailfish.patch
-%patch8 -p1
-# OPP-reject-unsupported.patch
-%patch9 -p1
-# OPP-unsupported-type-error-code.patch
-%patch10 -p1
-# PBAP-vcardlisting-cache-flush.patch
-%patch11 -p1
-# FIX-compilation-gcc483.patch
-%patch12 -p1
-# PBAP-request-cleanup.patch
-%patch13 -p1
 %build
 ./bootstrap
 sed -i 's/ovi_suite/pc_suite/' plugins/usb.c
