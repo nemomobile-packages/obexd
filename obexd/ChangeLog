@@ -1,0 +1,342 @@
+ver 0.48:
+	Fix issue with phonebook contacts query.
+	Add support for phonebook client filters.
+	Add support for message status handling.
+	Add support for OBEX application parameter API.
+
+ver 0.47:
+	Update client session API.
+	Change D-Bus namespace to org.bluez.obex.
+
+ver 0.46:
+	Update client transfer API.
+	Fix issue with using invalid PSM numbers.
+	Add support for MAP message listing parameters.
+	Add support for MAP folder listing retrieval.
+
+ver 0.45:
+	Fix issue with SRM and GET requests.
+	Fix issue with SRM headers and CONNECT.
+	Fix issue with ABORT request not being not processed.
+	Fix issue with file deletion when push gets aborted.
+	Fix issue with missing parsing of PUT application parameter.
+	Fix issue with parsing of PBAP client application parameter.
+	Fix issue with byte-order conversion and L2CAP.
+	Add support for OBEX over L2CAP transport.
+	Add support for MAP AP core functions.
+
+ver 0.44:
+	Fix issue with incorrect path during authorization.
+	Fix issue with missing reset after transfer completion.
+	Fix issue with invalid memory access and PBAP.
+	Add support for OBEX Single Response Mode.
+
+ver 0.43:
+	Remove OpenOBEX dependency.
+	Fix multiple issues with PBAP and vCard encoding.
+	Add initial support for handling Message Access Profile.
+	Add support for internal and fully asynchronous OBEX library.
+
+ver 0.42:
+	Fix issue with freeing buffer before transfer is complete.
+	Fix issue with invalid memory read when pulling phonebook.
+	Fix issue with test cases for empty phonebooks.
+	Add support for multiple phonebooks when using EDS.
+	Add support for handling OBEX Action command.
+
+ver 0.41:
+	Fix issue with pulling phonebook entries without last name.
+	Fix issue with handling owner data in phonebook pull.
+	Add support for fetching call history in parts.
+	Add support for selective plugin loading.
+	Add support for Message Access Profile plugin.
+
+ver 0.40:
+	Fix issue with plugin close & disconnect functions call order.
+	Fix issue with history queries for contacts outside phonebook.
+	Fix issue with crash after fetching single owner vCard.
+	Add support for multiple URLs in phonebooks.
+
+ver 0.39:
+	Fix for handling fax and cell phone numbers.
+	Fix for handling emails in pull call history queries.
+	Fix for handling addresses in pull call history queries.
+	Fix for handling default card and empty phonebook.
+	Add support for handling NewMissedCalls.
+
+ver 0.38:
+	Fix regression causing crash in 3-way calling.
+	Fix possible crash when processing session callback.
+	Fix issue with fetching contact photo file name.
+	Fix issue with fetching 0.vcf vCard entry.
+	Add support for optimized PBAP tracker queries.
+	Add support for files bigger than 2GB on 32-bit systems.
+
+ver 0.37:
+	Fix queries for contact with only one affiliation.
+	Fix pull phonebook with non-zero offset parameter.
+	Fix pull phonebook reply if filter not set.
+	Fix proper type handling for various queries.
+
+ver 0.36:
+	Fix crash for empty listing and an invalid cache.
+	Fix issue with process pending request if transfer canceled.
+	Fix issue with error setting when canceling suspended requests.
+	Fix issue with folder listing and name header for subfolders.
+	Fix issue with status response after pulling empty call history.
+	Fix issue with not handling nco affiliation fields correctly.
+	Fix issue with history listing queries in phonebook-tracker.
+	Fix regression when formatting timestamps from tracker.
+
+ver 0.35:
+	Fix regression on suspend on opening.
+	Fix suspend stream on opening if no data.
+	Fix memory leaks in phonebook-tracker module.
+	Fix not responding Not Found for filtered vcard-listing.
+	Fix not responding Not Found when no entry is found.
+	Fix issue with X-IRMC-CALL-DATETIME format.
+
+ver 0.34:
+	Fix issue with error detection and last part of transfer buffer.
+	Fix issue with not detecting errors on small files.
+	Fix issue with emitting TransferCompleted twice.
+	Fix issue with default call type from call log.
+	Fix issue with websiteUrl query field not being generic.
+	Add support for binding mch, ich, och and cch call logs.
+	Add handling of TITLE contact's field in vCard.
+
+ver 0.33:
+	Fix issue with handling of phonebook size during pull request.
+	Add support for handling of UID contact field in vCard.
+	Add support for handling more than one address in vCard.
+	Add support for merging address fields into single field.
+
+ver 0.32:
+	Fix issues caused by dependencies on phonebook source.
+	Fix handling empty fields in vCards.
+	Fix issues with emails category.
+
+ver 0.31:
+	Fix aborting capability scripts creating zombies.
+	Fix problem with multiple emails in same vcard.
+	Fix multiple phone number problem in pull vcard.
+	Fix multiple phone numbers problem in vcard-listing.
+	Fix return value checking of e_book_async_get_contacts.
+	Fix a memory leak when adding contacts to the result.
+	Add support of single contact's fields in vcard.
+	Add support for FAX number with tracker phonebook.
+	Add simple IrMC sync server support.
+
+ver 0.30:
+	Fix issue with empty error messages.
+	Fix issue with query for vCarcd listing.
+	Fix problem with incoming calls query.
+	Fix handling of vCard filter settings.
+	Fix potential buffer overflow with target sizes.
+	Fix NULL checking within PBAP GET operation.
+	Fix NULL checking for PBAP name parameter.
+	Fix crash when processing OBEX_EV_PROGRESS event.
+	Fix crash when resetting a session with no service.
+	Fix not closing socket when connection attempt fails.
+	Fix de-registering PBAP drivers on init failure scenarios.
+	Add variable target size support to MIME type drivers.
+	Add support for returning all eBook TEL attributes.
+	Add PBAP client tests for ICH, OCH, MCH and CCH.
+
+ver 0.29:
+	Fix security requirements for legacy devices.
+	Fix empty 'N:' parameter handling for vCards.
+	Fix order of contacts in the combined calls folder.
+	Fix not replying error when transfer could not be started.
+	Fix not unregistering transfer when completed.
+	Fix memory leak when freeing transfer parameters.
+	Fix issues with handling of driver reset.
+	Add support for responding to Auth Challenge.
+	Add support for dynamic debug feature.
+
+ver 0.28:
+	Fix broken assumption about contacts.
+	Fix issue with exporting empty contacts.
+	Fix issue with not always including the TEL header.
+	Fix wrong response code for PBAP PUT operation.
+	Fix handling of Tracker optional parameters.
+	Fix queries for incoming and outgoing folders.
+	Fix ordering during folder listing.
+	Fix complex logic discovering the type of call.
+	Add support for the X-IRMC-CALL-DATETIME field.
+
+ver 0.27:
+	Fix GET name handling with FTP service.
+	Fix service driver matching when who is not specified.
+	Fix object name not being updated when agent changes it.
+	Fix inconsistency when using vCard version 2.1.
+	Fix wrong response code to PUT requests for PBAP.
+	Fix crash on PBAP SetPhoneBook function.
+	Add support for transport drivers.
+	Add support for Nokia backup plugin.
+
+ver 0.26:
+	Fix the order of the calls handles.
+	Fix crash when receiving small objects.
+	Fix invalid memory access when removing a file.
+	Fix inverting the list with wrong search attribute.
+	Fix wrong response code for dummy PullvCardListing.
+	Fix sending the Not Found response asynchronously.
+	Fix not resetting buffered data count when resetting the session.
+	Add support for multiple telephone numbers.
+	Add support for the ADR filter.
+
+ver 0.25:
+	Fix issue with missing phonebook-tracker.c file.
+
+ver 0.24:
+	Fix bug when creating directories.
+	Fix error code when removing non-empty directory.
+	Fix PullBusinessCard not return transfer errors.
+	Fix MaxListCount handling for PBAP PullPhoneBook function.
+	Fix mimetype driver selection and default fallback.
+	Add support to the WHO header in mimetype drivers.
+	Add support for PBAP operations to the back-ends.
+	Add support for PBAP Tracker backend.
+
+ver 0.23:
+	Fix unneeded reset of session after a CONNECT.
+	Fix folder and object names with enabled auto accept.
+	Fix agent not being released after transfers complete.
+	Fix sending full packets to achieve higher throughput.
+	Add support for mimetype driver to phonebook access.
+	Add support for mimetype driver to SyncEvolution.
+
+ver 0.22:
+	Fix file corruption during PUT operation.
+	Fix the response of PUT requests for PBAP.
+	Fix blocking while waiting capability script to exit.
+	Fix compilation issues with driver and plugin options.
+	Fix service driver selection when WHO header is informed.
+	Fix issue with PC-Suite WHO header.
+	Fix issue when mime type exists but is unknown.
+	Fix issue when opening file fails during SendFiles.
+	Fix error code response when there is no default vCard.
+	Fix a memory leak when opening a folder for listing.
+
+ver 0.21:
+	Fix crash caused by D-Bus timeout handling.
+	Fix issue when the object size is unknown.
+	Fix issue with reporting no space left on disk.
+	Fix read callback of various drivers.
+
+ver 0.20:
+	Fix D-Bus error handling on SyncEvolution connect.
+	Fix PC Suite service driver matching.
+
+ver 0.19:
+	Fix crash with agent unregister handling.
+	Add support for mimetype and filesystem plugins.
+	Add support for phonebook and telephony drivers.
+	Add initial OBEX server/SyncML binding for SyncEvolution.
+
+ver 0.18:
+	Fix free space calculation on systems where fsfilcnt_t is 32-bit.
+	Fix SendFiles to actually use the source argument.
+
+ver 0.17:
+	Fix Bluetooth initialization handling.
+	Add support for full non-recursive build.
+
+ver 0.16:
+	Add support for mem-type attribute when in PC Suite mode.
+	Make sure the ONLCR flag is cleared for the TTY.
+
+ver 0.15:
+	Fix BtIO race condition in detecting a closed file descriptor.
+	Fix handling of strict-aliasing rules.
+
+ver 0.14:
+	Fix issue with symlinks on TTY based servers.
+	Add proper error logs for os_prepare_get failures.
+	Add proper error checks for finding adapter details.
+	Add support for RFCOMM channel property.
+	Add support for PBAP integration with EDS.
+
+ver 0.13:
+	Fix issue when bluetoothd is restarted no record is registered.
+	Fix registration of the Transfer interface for FTP sessions.
+	Add FTP client test script.
+	Add support for OBEX root folder setup script.
+	Make root folder relative to $HOME if it doesn't start with '/'.
+
+ver 0.12:
+	Fix various format string issues.
+	Fix handling of authorizations with no reply.
+	Add support for using BtIO helper library.
+	Add signal handling for toggling debug messages.
+	Add signal handling for USB TTY details.
+	Add test script for folder listing.
+
+ver 0.11:
+	Fix bug when canceling an authorization request.
+	Fix broken handling of successful received D-Bus reply.
+	Fix broken escape handling for filenames.
+	Fix blocking issue with opened TTY.
+
+ver 0.10:
+	Fix showing symlinks as files.
+	Fix error codes on OBEX get operations.
+	Fix "not found" error for delete operations.
+	Fix NULL pointer usage of 'nonnull' parameter.
+	Fix TTY handling with PC Suite mode.
+	Fix D-Bus NameOwnerChanged watch handling.
+
+ver 0.9:
+	Fix O_NOCTTY issue when opening TTY device.
+	Add support for verbose compiler warnings.
+	Add support for application parameters.
+	Add support for generic GetCapabilities command.
+	Add initial support for Synchronization profile.
+	Add basic implementation of Phonebook Access profile.
+	Add basic Phonebook Access client support.
+
+ver 0.8:
+	Fix memory leaks with asynchronous operations.
+	Fix issues with handling larger MTU sizes.
+	Fix session and client disconnect handling.
+	Add basic Nokia PC Suite support.
+	Add support for reinitializing TTY server.
+
+ver 0.7:
+	Fix issue with transfers larger than session buffer size.
+	Fix various memory leaks within session handling.
+	Add support for OBEX client session interface.
+	Add support for File Transfer client interface.
+	Add support for using the any adapter object path.
+
+ver 0.6:
+	Use BlueZ service for FTP authorization.
+	Use BlueZ service for service records.
+	Never send an OBEX abort for a server.
+	Set buffer to NULL after freeing it.
+	Include the correct COPYING file.
+
+ver 0.5:
+	Add initial obex-client support.
+	Add missing API documenation.
+	Rename D-Bus service files.
+
+ver 0.4:
+	Add plugin infrastructure.
+	Add support for TTY transport.
+	Fix case when the client doesn't send length header.
+	Use LM_AUTH and LM_ENCRYPT instead of LM_SECURE.
+
+ver 0.3:
+	Add support for dynamic capability file.
+	Removing incomplete files on error.
+	Multiple bug fixes.
+
+ver 0.2:
+	Add folder listing support.
+	Add D-Bus session interface.
+	Check for dbus_watch_get_unix_fd function.
+
+ver 0.1:
+	Initial public release.
