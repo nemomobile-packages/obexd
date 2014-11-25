@@ -149,6 +149,7 @@ EXTRA_DIST = src/genbuiltin $(doc_files) $(test_files) \
 			src/obexd.service.in client/obex-client.service.in \
 			plugins/phonebook-dummy.c plugins/phonebook-ebook.c \
 			plugins/phonebook-tracker.c \
+			plugins/phonebook-sailfish.c \
 			plugins/messages-dummy.c plugins/messages-tracker.c
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-client --enable-server

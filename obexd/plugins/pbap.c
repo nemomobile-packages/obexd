@@ -231,15 +231,16 @@ static void phonebook_size_result(const char *buffer, size_t bufsize,
 
 	DBG("vcards %d", vcards);
 
-	phonebooksize = htons(vcards);
+	phonebooksize = vcards;
 
+	pbap->obj->firstpacket = TRUE;
 	pbap->obj->apparam = g_obex_apparam_set_uint16(NULL, PHONEBOOKSIZE_TAG,
 								phonebooksize);
 
 	if (missed > 0)	{
 		DBG("missed %d", missed);
 
-		pbap->obj->apparam = g_obex_apparam_set_uint16(
+		pbap->obj->apparam = g_obex_apparam_set_uint8(
 							pbap->obj->apparam,
 							NEWMISSEDCALLS_TAG,
 							missed);
@@ -253,7 +254,8 @@ static void query_result(const char *buffer, size_t bufsize, int vcards,
 {
 	struct pbap_session *pbap = user_data;
 
-	DBG("");
+	DBG("size=%d, vcards=%d, lastpart=%s",
+		vcards, bufsize, lastpart ? "yes" : "no");
 
 	if (pbap->obj->request && lastpart) {
 		phonebook_req_finalize(pbap->obj->request);
@@ -278,7 +280,7 @@ static void query_result(const char *buffer, size_t bufsize, int vcards,
 
 		pbap->obj->firstpacket = TRUE;
 
-		pbap->obj->apparam = g_obex_apparam_set_uint16(
+		pbap->obj->apparam = g_obex_apparam_set_uint8(
 							pbap->obj->apparam,
 							NEWMISSEDCALLS_TAG,
 							missed);
@@ -408,8 +410,9 @@ static int generate_response(void *user_data)
 
 	if (max == 0) {
 		/* Ignore all other parameter and return PhoneBookSize */
-		uint16_t size = htons(g_slist_length(pbap->cache.entries));
+		uint16_t size = g_slist_length(pbap->cache.entries);
 
+		pbap->obj->firstpacket = TRUE;
 		pbap->obj->apparam = g_obex_apparam_set_uint16(
 							pbap->obj->apparam,
 							PHONEBOOKSIZE_TAG,
@@ -447,7 +450,7 @@ static int generate_response(void *user_data)
 	return 0;
 }
 
-static void cache_ready_notify(void *user_data)
+static void cache_ready_notify(void *user_data, int missed)
 {
 	struct pbap_session *pbap = user_data;
 
@@ -458,15 +461,28 @@ static void cache_ready_notify(void *user_data)
 
 	pbap->cache.valid = TRUE;
 
+	if (missed > 0)	{
+		DBG("missed %d", missed);
+
+		pbap->obj->firstpacket = TRUE;
+
+		pbap->obj->apparam = g_obex_apparam_set_uint8(
+							pbap->obj->apparam,
+							NEWMISSEDCALLS_TAG,
+							missed);
+	}
+
 	generate_response(pbap);
 	obex_object_set_io_flags(pbap->obj, G_IO_IN, 0);
 }
 
-static void cache_entry_done(void *user_data)
+static void cache_entry_done(void *user_data, int missed)
 {
 	struct pbap_session *pbap = user_data;
 	const char *id;
 	int ret;
+
+	(void) missed;
 
 	DBG("");
 
@@ -551,6 +567,7 @@ static int pbap_get(struct obex_session *os, void *user_data)
 		return -EBADR;
 
 	rsize = obex_get_apparam(os, &buffer);
+	DBG("apparam size %d", rsize);
 	if (rsize < 0) {
 		if (g_ascii_strcasecmp(type, VCARDENTRY_TYPE) != 0)
 			return -EBADR;
@@ -558,7 +575,23 @@ static int pbap_get(struct obex_session *os, void *user_data)
 		rsize = 0;
 	}
 
+	/* Workaround for PTS client not sending mandatory apparams */
+	if (!rsize && g_ascii_strcasecmp(type, VCARDLISTING_TYPE) == 0) {
+		static const uint8_t default_apparams[] = {
+			0x04, 0x02, 0xff, 0xff
+		};
+		buffer = default_apparams;
+		rsize = sizeof(default_apparams);
+	} else if (!rsize && g_ascii_strcasecmp(type, VCARDENTRY_TYPE) == 0) {
+		static const uint8_t default_apparams[] = {
+			0x07, 0x01, 0x00
+		};
+		buffer = default_apparams;
+		rsize = sizeof(default_apparams);
+	}
+
 	params = parse_aparam(buffer, rsize);
+	DBG("params %p", params);
 	if (params == NULL)
 		return -EBADR;
 
@@ -591,6 +624,7 @@ static int pbap_get(struct obex_session *os, void *user_data)
 	} else
 		return -EBADR;
 
+	DBG("path %s", path ? path : "<null>");
 	if (path == NULL)
 		return -EBADR;
 
@@ -866,14 +900,15 @@ static ssize_t vobject_pull_get_next_header(void *object, void *buf, size_t mtu,
 								uint8_t *hi)
 {
 	struct pbap_object *obj = object;
-	struct pbap_session *pbap = obj->session;
+
+	DBG("firstpacket=%s", obj->firstpacket ? "yes" : "no");
 
 	if (!obj->buffer && !obj->apparam)
 		return -EAGAIN;
 
 	*hi = G_OBEX_HDR_APPARAM;
 
-	if (pbap->params->maxlistcount == 0 || obj->firstpacket) {
+	if (obj->firstpacket) {
 		obj->firstpacket = FALSE;
 
 		return g_obex_apparam_encode(obj->apparam, buf, mtu);
@@ -926,8 +961,11 @@ static ssize_t vobject_list_get_next_header(void *object, void *buf, size_t mtu,
 
 	*hi = G_OBEX_HDR_APPARAM;
 
-	if (pbap->params->maxlistcount == 0)
+	if (obj->firstpacket) {
+		obj->firstpacket = FALSE;
+
 		return g_obex_apparam_encode(obj->apparam, buf, mtu);
+	}
 
 	return 0;
 }
