@@ -105,10 +105,12 @@ static gboolean usb_watchdog(GIOChannel *io, GIOCondition cond,
 	return FALSE;
 }
 
+#define MAX_RETRIES 10
+
 static int usb_connect(struct obex_server *server)
 {
 	struct termios options;
-	int fd, err, arg;
+	int fd, err, arg, r;
 	glong flags;
 
 	if (usb_reconnecting > 0) {
@@ -120,9 +122,15 @@ static int usb_connect(struct obex_server *server)
 	if (usb_io != NULL)
 		return 0;
 
-	fd = open(USB_DEVNODE, O_RDWR | O_NOCTTY);
-	if (fd < 0)
-		return fd;
+	for (r = 0; r < MAX_RETRIES; r++) {
+		fd = open(USB_DEVNODE, O_RDWR | O_NOCTTY);
+		if (fd >= 0)
+			break;
+		if (errno != ENOENT || r == MAX_RETRIES - 1)
+			return fd;
+		DBG("%s does not exist, retrying.", USB_DEVNODE);
+		usleep(100*1000);
+	}
 
 	flags = fcntl(fd, F_GETFL);
 	fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
