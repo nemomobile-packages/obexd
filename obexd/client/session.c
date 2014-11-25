@@ -97,6 +97,7 @@ struct obc_session {
 	guint watch;
 	GQueue *queue;
 	guint queue_complete_id;
+	gboolean disconnecting;
 };
 
 static GSList *sessions = NULL;
@@ -463,6 +464,7 @@ struct obc_session *obc_session_create(const char *source,
 	session->destination = g_strdup(destination);
 	session->channel = channel;
 	session->queue = g_queue_new();
+	session->disconnecting = FALSE;
 
 	if (owner)
 		obc_session_set_owner(session, owner, owner_disconnected);
@@ -479,12 +481,36 @@ proceed:
 	return session;
 }
 
+static void disconnect_cb(GObex *obex, GError *err, GObexPacket *rsp,
+							gpointer user_data)
+{
+	struct pending_request *p = user_data;
+	struct obc_session *session = p != NULL ? p->session : NULL;
+
+	DBG("Finalizing disconnection. ");
+
+	pending_request_free(p);
+
+	if (session != NULL && session->id > 0 && session->transport != NULL) {
+		session->transport->disconnect(session->id);
+		session->id = 0;
+	}
+
+	obc_session_unref(session);
+}
+
 void obc_session_shutdown(struct obc_session *session)
 {
 	struct pending_request *p;
 	GError *err;
 
 	DBG("%p", session);
+
+	if (session->disconnecting == TRUE) {
+		DBG("%p already disconnecting", session);
+		return;
+	}
+	session->disconnecting = TRUE;
 
 	obc_session_ref(session);
 
@@ -515,13 +541,26 @@ void obc_session_shutdown(struct obc_session *session)
 	if (session->path)
 		session_unregistered(session);
 
-	/* Disconnect transport */
-	if (session->id > 0 && session->transport != NULL) {
-		session->transport->disconnect(session->id);
-		session->id = 0;
+	DBG("Checking the need for disconnect request");
+	/* Send a disconnect request and wait for reply */
+	if (session->id > 0 && session->transport != NULL
+			&& session->obex != NULL) {
+		DBG("Generating disconnect request. ");
+		err = NULL;
+		p = pending_request_new(session, NULL, NULL, NULL);
+		p->req_id = g_obex_disconnect(session->obex, disconnect_cb,
+						p, &err);
+		if (err != NULL) {
+			DBG("Generating disconnect request failed. ");
+			disconnect_cb(session->obex, NULL, NULL, p);
+		} else {
+			/* Finalize when reply arrives */
+			DBG("Generating disconnect request succeeded. ");
+		}
+	} else {
+		DBG("Unreferring without disconnect request.");
+		obc_session_unref(session);
 	}
-
-	obc_session_unref(session);
 }
 
 static DBusMessage *session_get_properties(DBusConnection *connection,
