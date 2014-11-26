@@ -52,10 +52,17 @@
 #define CALLHIST_METHOD_FETCH_ONE "FetchById"
 #define CALLHIST_METHOD_FETCH_MANY "Fetch"
 
+#define CHUNK_LENGTH 128
+
 #define VERSION_UNSET 0
 
-#define PB_FORMAT_VCARD21 0
-#define PB_FORMAT_VCARD30 1
+#define PB_FORMAT_VCARD21	0
+#define PB_FORMAT_VCARD30	1
+#define PB_FORMAT_NONE		2
+
+#define PB_FORMAT_VCARD21_STRING	"vcard21"
+#define PB_FORMAT_VCARD30_STRING	"vcard30"
+#define PB_FORMAT_NONE_STRING		"none"
 
 #define FILTER_BIT_MAX 28
 
@@ -109,12 +116,16 @@ struct phonebook_data
 			const char *name,
 			const char *tel,
 			const char *vcard);
-	void (*process_end)(struct phonebook_data *data);
+	void (*process_end)(struct phonebook_data *data, gboolean last);
 
 	guint32 pull_count;
 	char *pull_buf;
 
 	guint32 newmissedcalls;
+
+	guint32 chunk_offset;
+	guint32 chunk_length;
+	guint32 chunk_end;
 };
 
 static void append_filter(DBusMessage *msg, uint8_t format, uint64_t filter)
@@ -135,7 +146,9 @@ static void append_filter(DBusMessage *msg, uint8_t format, uint64_t filter)
 		filter |= 
 			format == PB_FORMAT_VCARD30
 			? 0x87 /* VERSION, N, FN, TEL */
-			: 0x85 /* VERSION, N, TEL */;
+			: format == PB_FORMAT_VCARD21
+			? 0x85 /* VERSION, N, TEL */
+			: 0x00 /* Nothing (will be ignored anyway) */;
 		for (i = 0; i <= FILTER_BIT_MAX; i++) {
 			if (filter & (1ULL << i)) {
 				const char *f = filter_name[i];
@@ -168,6 +181,61 @@ static const char *name_to_calltype(const char *name)
 			g_strcmp0(name, PB_CALLS_COMBINED_FOLDER) == 0)
 		? "combined" :
 		NULL;
+}
+
+static const char *format_to_string(uint8_t format)
+{
+	return
+		format == PB_FORMAT_VCARD30 ? PB_FORMAT_VCARD30_STRING :
+		format == PB_FORMAT_VCARD21 ? PB_FORMAT_VCARD21_STRING :
+		PB_FORMAT_NONE_STRING;
+}
+
+static DBusMessage *next_chunk_request(struct phonebook_data *data,
+					const char *fmt,
+					const char *type)
+{
+	DBusMessage *msg = NULL;
+	guint32 off32 = data->chunk_offset;
+	guint32 len32 = MIN(data->chunk_end - data->chunk_offset,
+			data->chunk_length);
+
+	if (!type) {
+		DBG("Fetching %u of %u contacts starting at "
+			"position %u, formatting as '%s'",
+			len32, data->params->maxlistcount, off32, fmt);
+		msg = dbus_message_new_method_call(CALLDATA_SERVICE,
+						CONTACTS_PATH,
+						CONTACTS_INTERFACE,
+						CONTACTS_METHOD_FETCH_MANY);
+		dbus_message_append_args(msg,
+					DBUS_TYPE_UINT32, &off32,
+					DBUS_TYPE_UINT32, &len32,
+					DBUS_TYPE_STRING, &fmt,
+					DBUS_TYPE_INVALID);
+		append_filter(msg,
+			data->params->format,
+			data->params->filter);
+	} else {
+		DBG("Fetching %u of %u %s calls starting at "
+			"position %u, formatting as '%s'",
+			len32, data->params->maxlistcount, type, off32, fmt);
+		msg = dbus_message_new_method_call(CALLDATA_SERVICE,
+						CALLHIST_PATH,
+						CALLHIST_INTERFACE,
+						CALLHIST_METHOD_FETCH_MANY);
+		dbus_message_append_args(msg,
+					DBUS_TYPE_STRING, &type,
+					DBUS_TYPE_UINT32, &off32,
+					DBUS_TYPE_UINT32, &len32,
+					DBUS_TYPE_STRING, &fmt,
+					DBUS_TYPE_INVALID);
+		append_filter(msg,
+			data->params->format,
+			data->params->filter);
+	}
+
+	return msg;
 }
 
 static void count_cb(DBusPendingCall *pend,
@@ -251,7 +319,7 @@ static void pull_process(struct phonebook_data *data,
 	}
 }
 
-static void pull_end(struct phonebook_data *data)
+static void pull_end(struct phonebook_data *data, gboolean last)
 {
 	char *buf = data->pull_buf;
 	guint32 count = data->pull_count;
@@ -262,7 +330,7 @@ static void pull_end(struct phonebook_data *data)
 		buf ? strlen(buf) : 0, count, data->newmissedcalls);
 	data->cb(buf, buf ? strlen(buf) : 0, count,
 		data->newmissedcalls > 0xff ? 0xff : data->newmissedcalls,
-		TRUE, data->user_data);
+		last, data->user_data);
 
 	g_free(buf);
 }
@@ -286,7 +354,7 @@ static void cache_process(struct phonebook_data *data,
 	(data->entry_cb)(id, handle, name, "", tel, data->user_data);
 }
 
-static void cache_end(struct phonebook_data *data)
+static void cache_end(struct phonebook_data *data, gboolean last)
 {
 	(data->ready_cb)(data->user_data,
 			data->newmissedcalls > 0xff
@@ -310,15 +378,6 @@ static void fetch_one_cb(DBusPendingCall *pend,
 
 	DBG("");
 
-	if (!g_strcmp0(data->name, PB_CONTACTS) ||
-		!g_strcmp0(data->name, PB_CONTACTS_FOLDER)) {
-		contacts_cb = TRUE;
-		signature = "u(ssss)";
-	} else {
-		contacts_cb = FALSE;
-		signature = "uu(ssss)";
-	}
-
 	reply = dbus_pending_call_steal_reply(data->pend);
 	if (reply == NULL)
 		return;
@@ -328,6 +387,15 @@ static void fetch_one_cb(DBusPendingCall *pend,
 	if (dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
 		DBG("D-Bus error");
 		goto done;
+	}
+
+	if (!g_strcmp0(data->name, PB_CONTACTS) ||
+		!g_strcmp0(data->name, PB_CONTACTS_FOLDER)) {
+		contacts_cb = TRUE;
+		signature = "u(ssss)";
+	} else {
+		contacts_cb = FALSE;
+		signature = "uu(ssss)";
 	}
 
 	if (g_strcmp0(dbus_message_get_signature(reply), signature) != 0) {
@@ -364,7 +432,7 @@ done:
 	dbus_pending_call_unref(data->pend);
 	data->pend = NULL;
 
-	(data->process_end)(data);
+	(data->process_end)(data, TRUE);
 }
 
 static void fetch_many_cb(DBusPendingCall *pend,
@@ -376,8 +444,22 @@ static void fetch_many_cb(DBusPendingCall *pend,
 	guint32 version;
 	gboolean contacts_cb = FALSE;
 	const gchar *signature = NULL;
+	guint32 results = 0;
 
 	DBG("");
+
+	reply = dbus_pending_call_steal_reply(data->pend);
+	if (reply == NULL)
+		return;
+
+	/* First chunk of responses? */
+	if (data->chunk_offset == data->params->liststartoffset)
+		(data->process_begin)(data);
+
+	if (dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		DBG("D-Bus error");
+		goto done;
+	}
 
 	if (!g_strcmp0(data->name, PB_CONTACTS) ||
 		!g_strcmp0(data->name, PB_CONTACTS_FOLDER)) {
@@ -386,17 +468,6 @@ static void fetch_many_cb(DBusPendingCall *pend,
 	} else {
 		contacts_cb = FALSE;
 		signature = "uua(ssss)";
-	}
-
-	reply = dbus_pending_call_steal_reply(data->pend);
-	if (reply == NULL)
-		return;
-
-	(data->process_begin)(data);
-
-	if (dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR) {
-		DBG("D-Bus error");
-		goto done;
 	}
 
 	if (g_strcmp0(dbus_message_get_signature(reply), signature) != 0) {
@@ -433,16 +504,29 @@ static void fetch_many_cb(DBusPendingCall *pend,
 		DBG("id: %s, name: %s, tel:%s, vcard: %s",
 			id, name, tel, vcard);
 		(data->process)(data, id, name, tel, vcard);
+		results++;
 
 		dbus_message_iter_next(&array_iter);
 	}
 
 done:
+	DBG("%u results received, now at offset %u (ending at %u)",
+		results, data->chunk_offset, data->chunk_end);
+
 	dbus_message_unref(reply);
 	dbus_pending_call_unref(data->pend);
 	data->pend = NULL;
 
-	(data->process_end)(data);
+	data->chunk_offset += results;
+
+	if (results == data->chunk_length &&
+			data->chunk_offset < data->chunk_end) {
+		/* Full chunk read but not at the end -> read more later */
+		(data->process_end)(data, FALSE);
+	} else {
+		/* Everything read or error */
+		(data->process_end)(data, TRUE);
+	}
 }
 
 int phonebook_init(void)
@@ -571,6 +655,11 @@ void *phonebook_pull(const char *name,
 	data->process = pull_process;
 	data->process_end = pull_end;
 
+	data->chunk_offset = data->params->liststartoffset;
+	data->chunk_length = CHUNK_LENGTH;
+	data->chunk_end = data->params->liststartoffset +
+				data->params->maxlistcount;
+
 	if (err)
 		*err = 0;
 
@@ -589,9 +678,7 @@ int phonebook_pull_read(void *request)
 	if (!data)
 		return -ENOENT;
 
-	fmt = data->params->format == PB_FORMAT_VCARD30
-		? "vcard30"
-		: "vcard21";
+	fmt = format_to_string(data->params->format);
 
 	if (g_strcmp0(data->name, PB_CONTACTS) == 0) {
 
@@ -604,23 +691,7 @@ int phonebook_pull_read(void *request)
 				CONTACTS_METHOD_FETCH_COUNT);
 			cb = count_cb;
 		} else {
-			uint32_t off32 = data->params->liststartoffset;
-			uint32_t len32 = data->params->maxlistcount;
-			DBG("Fetching %u contacts starting at position %u, "
-				"formatting as '%s'", len32, off32, fmt);
-			msg = dbus_message_new_method_call
-				(CALLDATA_SERVICE,
-				CONTACTS_PATH,
-				CONTACTS_INTERFACE,
-				CONTACTS_METHOD_FETCH_MANY);
-			dbus_message_append_args(msg,
-						DBUS_TYPE_UINT32, &off32,
-						DBUS_TYPE_UINT32, &len32,
-						DBUS_TYPE_STRING, &fmt,
-						DBUS_TYPE_INVALID);
-			append_filter(msg,
-				data->params->format,
-				data->params->filter);
+			msg = next_chunk_request(data, fmt, NULL);
 			cb = fetch_many_cb;
 		}
 
@@ -643,24 +714,7 @@ int phonebook_pull_read(void *request)
 						DBUS_TYPE_INVALID);
 			cb = count_cb;
 		} else {
-			uint32_t off32 = data->params->liststartoffset;
-			uint32_t len32 = data->params->maxlistcount;
-			DBG("Fetching %u calls starting at position %u ",
-				len32, off32);
-			msg = dbus_message_new_method_call
-				(CALLDATA_SERVICE,
-				CALLHIST_PATH,
-				CALLHIST_INTERFACE,
-				CALLHIST_METHOD_FETCH_MANY);
-			dbus_message_append_args(msg,
-						DBUS_TYPE_STRING, &type,
-						DBUS_TYPE_UINT32, &off32,
-						DBUS_TYPE_UINT32, &len32,
-						DBUS_TYPE_STRING, &fmt,
-						DBUS_TYPE_INVALID);
-			append_filter(msg,
-				data->params->format,
-				data->params->filter);
+			msg = next_chunk_request(data, fmt, type);
 			cb = fetch_many_cb;
 		}
 
@@ -711,9 +765,7 @@ void *phonebook_get_entry(const char *folder, const char *id,
 	data->process = pull_process;
 	data->process_end = pull_end;
 
-	fmt = data->params->format == PB_FORMAT_VCARD30
-		? "vcard30"
-		: "vcard21";
+	fmt = format_to_string(data->params->format);
 
 	if (g_strcmp0(folder, PB_CONTACTS_FOLDER) == 0) {
 		DBG("Fetching contact entry");
@@ -764,11 +816,15 @@ void *phonebook_create_cache(const char *name,
 			phonebook_cache_ready_cb ready_cb, void *user_data,
 			int *err)
 {
+	static const struct apparam_field dummy_cache_params = {
+		.liststartoffset = 0,
+		.maxlistcount = ~0,
+		.format = PB_FORMAT_NONE,
+		.filter = 0
+	};
 	struct phonebook_data *data;
 	DBusMessage *msg;
-	uint32_t off32 = 0;
-	uint32_t len32 = ~0;
-	const char *fmt = "vcard21";
+	const char *fmt = NULL;
 
 	DBG("name %s", name);
 
@@ -792,36 +848,22 @@ void *phonebook_create_cache(const char *name,
 	data->process = cache_process;
 	data->process_end = cache_end;
 
-	if (g_strcmp0(name, PB_CONTACTS_FOLDER) == 0) {
+	data->params = &dummy_cache_params;
 
+	data->chunk_offset = 0;
+	data->chunk_length = ~0;
+	data->chunk_end = ~0;
+
+	fmt = format_to_string(data->params->format);
+
+	if (g_strcmp0(name, PB_CONTACTS_FOLDER) == 0) {
 		DBG("Caching contacts");
-		msg = dbus_message_new_method_call
-			(CALLDATA_SERVICE,
-				CONTACTS_PATH,
-				CONTACTS_INTERFACE,
-				CONTACTS_METHOD_FETCH_MANY);
-		dbus_message_append_args(msg,
-					DBUS_TYPE_UINT32, &off32,
-					DBUS_TYPE_UINT32, &len32,
-					DBUS_TYPE_STRING, &fmt,
-					DBUS_TYPE_INVALID);
-		append_filter(msg, PB_FORMAT_VCARD21, 0);
+		msg = next_chunk_request(data, fmt, NULL);
+
 	} else {
 		const char *type = name_to_calltype(name);
-
 		DBG("Caching call history");
-		msg = dbus_message_new_method_call
-			(CALLDATA_SERVICE,
-				CALLHIST_PATH,
-				CALLHIST_INTERFACE,
-				CALLHIST_METHOD_FETCH_MANY);
-		dbus_message_append_args(msg,
-					DBUS_TYPE_STRING, &type,
-					DBUS_TYPE_UINT32, &off32,
-					DBUS_TYPE_UINT32, &len32,
-					DBUS_TYPE_STRING, &fmt,
-					DBUS_TYPE_INVALID);
-		append_filter(msg, PB_FORMAT_VCARD21, 0);
+		msg = next_chunk_request(data, fmt, type);
 	}
 
 	dbus_connection_send_with_reply(conn,
