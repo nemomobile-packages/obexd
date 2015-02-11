@@ -86,7 +86,7 @@ src_obexd_SOURCES = $(gdbus_sources) $(builtin_sources) $(btio_sources) \
 			src/mimetype.h src/mimetype.c \
 			src/service.h src/service.c \
 			src/transport.h src/transport.c \
-			src/server.h src/server.c
+			src/server.h src/server.c src/access.c
 
 src_obexd_LDADD = @DBUS_LIBS@ @GLIB_LIBS@ @GTHREAD_LIBS@ \
 					@EBOOK_LIBS@ @BLUEZ_LIBS@ \
