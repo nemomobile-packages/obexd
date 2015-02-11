@@ -51,6 +51,11 @@ builtin_modules += pcsuite
 builtin_sources += plugins/pcsuite.c
 endif
 
+if JOLLA_BLACKLIST
+builtin_modules += jolla_blacklist
+builtin_sources += plugins/jolla-blacklist.c
+endif
+
 builtin_modules += opp
 builtin_sources += plugins/opp.c
 

@@ -46,6 +46,7 @@ Development files for %{name}.
 sed -i 's/ovi_suite/pc_suite/' plugins/usb.c
 %reconfigure --disable-static \
     --enable-usb --enable-pcsuite \
+    --enable-jolla-blacklist \
     --with-phonebook=sailfish \
     --with-contentfilter=helperapp
 
