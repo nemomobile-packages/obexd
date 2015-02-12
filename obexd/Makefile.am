@@ -217,3 +217,13 @@ noinst_PROGRAMS += tools/test-server
 tools_test_server_SOURCES = $(gobex_sources) $(btio_sources) \
 							tools/test-server.c
 tools_test_server_LDADD = @GLIB_LIBS@ @BLUEZ_LIBS@
+
+if JOLLA_BLACKLIST
+TESTS += unit/test-jolla-blacklist
+noinst_PROGRAMS += unit/test-jolla-blacklist
+
+unit_test_jolla_blacklist_SOURCES = src/access.c src/access.h \
+					src/log.c src/log.h \
+						unit/test-jolla-blacklist.c
+unit_test_jolla_blacklist_LDADD = @GLIB_LIBS@
+endif
