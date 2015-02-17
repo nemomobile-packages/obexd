@@ -69,7 +69,7 @@
       </sequence>							\
       <sequence>							\
         <uuid value=\"0x0003\"/>					\
-        <uint8 value=\"%u\" name=\"channel\"/>				\
+        <uint8 value=\"%%u\" name=\"channel\"/>				\
       </sequence>							\
       <sequence>							\
         <uuid value=\"0x0008\"/>					\
@@ -81,18 +81,21 @@
     <sequence>								\
       <sequence>							\
         <uuid value=\"0x1106\"/>					\
-        <uint16 value=\"0x0102\" name=\"version\"/>			\
+        <uint16 value=\"0x%04x\" name=\"version\"/>			\
       </sequence>							\
     </sequence>								\
   </attribute>								\
 									\
   <attribute id=\"0x0100\">						\
-    <text value=\"%s\" name=\"name\"/>					\
+    <text value=\"%%s\" name=\"name\"/>					\
   </attribute>								\
-  <attribute id=\"0x0200\">						\
+%s</record>"
+
+#define FTP_RECORD_PSM							\
+"  <attribute id=\"0x0200\">						\
     <uint16 value=\"%u\" name=\"psm\"/>					\
   </attribute>								\
-</record>"
+"
 
 static const uint8_t FTP_TARGET[TARGET_SIZE] = {
 			0xF9, 0xEC, 0x7B, 0xC4, 0x95, 0x3C, 0x11, 0xD2,
@@ -520,9 +523,8 @@ static struct obex_service_driver ftp = {
 	.name = "File Transfer server",
 	.service = OBEX_FTP,
 	.channel = FTP_CHANNEL,
-	.port = OBEX_PORT_RANDOM,
 	.secure = TRUE,
-	.record = FTP_RECORD,
+	.record = NULL,
 	.target = FTP_TARGET,
 	.target_size = TARGET_SIZE,
 	.connect = ftp_connect,
@@ -536,12 +538,56 @@ static struct obex_service_driver ftp = {
 
 static int ftp_init(void)
 {
-	return obex_service_driver_register(&ftp);
+	GKeyFile *config = NULL;
+	GError *err = NULL;
+	gchar *s = NULL;
+	uint16_t version = 0x0100;
+	int ret = 0;
+
+	config = g_key_file_new();
+	if (config == NULL)
+		goto init;
+
+	if (g_key_file_load_from_file(config, "/etc/obexd/ftp.conf",
+					G_KEY_FILE_NONE, NULL) == FALSE)
+		goto init;
+
+	s = g_key_file_get_string(config, "FTP", "Version", &err);
+	if (err) {
+		DBG("ftp.conf: %s", err->message);
+		g_error_free(err);
+		err = NULL;
+	} else {
+		version = strtol(s, NULL, 16);
+		g_free(s);
+	}
+
+init:
+	if (asprintf(&ftp.record, FTP_RECORD,
+			version,
+			version >= 0x0102 ? FTP_RECORD_PSM : "") < 0) {
+		ftp.record = NULL;
+		ret = -ENOMEM;
+	}
+
+	if (version >= 0x0102)
+		ftp.port = OBEX_PORT_RANDOM;
+
+	g_key_file_free(config);
+
+	if (ret == 0)
+		ret = obex_service_driver_register(&ftp);
+
+	return ret;
 }
 
 static void ftp_exit(void)
 {
 	obex_service_driver_unregister(&ftp);
+	if (ftp.record) {
+		g_free(ftp.record);
+		ftp.record = NULL;
+	}
 }
 
 OBEX_PLUGIN_DEFINE(ftp, ftp_init, ftp_exit)
