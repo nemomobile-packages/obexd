@@ -260,7 +260,7 @@ static void query_result(const char *buffer, size_t bufsize, int vcards,
 {
 	struct pbap_session *pbap = user_data;
 
-	DBG("size=%d, vcards=%d, lastpart=%s",
+	DBG("size=%zd, vcards=%d, lastpart=%s",
 		bufsize, vcards, lastpart ? "yes" : "no");
 
 	if (pbap->obj->request && lastpart) {
@@ -573,7 +573,7 @@ static int pbap_get(struct obex_session *os, void *user_data)
 		return -EBADR;
 
 	rsize = obex_get_apparam(os, &buffer);
-	DBG("apparam size %d", rsize);
+	DBG("apparam size %zd", rsize);
 	if (rsize < 0) {
 		if (g_ascii_strcasecmp(type, VCARDENTRY_TYPE) != 0)
 			return -EBADR;

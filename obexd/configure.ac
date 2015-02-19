@@ -25,6 +25,11 @@ fi
 AC_DEFINE_UNQUOTED(CONFIGDIR, "${configdir}",
 				[Directory for the configuration files])
 
+if (test "$USE_MAINTAINER_MODE" = "yes"); then
+	AC_CHECK_PROG(enable_coverage, [gcov], [yes], [no])
+fi
+AM_CONDITIONAL(COVERAGE, test "${enable_coverage}" = "yes")
+
 COMPILER_FLAGS
 
 AC_LANG_C

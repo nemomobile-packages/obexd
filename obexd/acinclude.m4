@@ -32,5 +32,9 @@ AC_DEFUN([COMPILER_FLAGS], [
 		CFLAGS="$CFLAGS -Wredundant-decls"
 		CFLAGS="$CFLAGS -Wcast-align"
 		CFLAGS="$CFLAGS -DG_DISABLE_DEPRECATED"
+		if (test "$enable_coverage" = "yes"); then
+			CFLAGS="$CFLAGS --coverage -g -O0"
+			LDFLAGS="$LDFLAGS --coverage"
+		fi
 	fi
 ])

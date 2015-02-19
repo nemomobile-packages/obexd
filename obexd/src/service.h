@@ -33,7 +33,7 @@ struct obex_service_driver {
 	unsigned int target_size;
 	const uint8_t *who;
 	unsigned int who_size;
-	const char *record;
+	char *record;
 	void *(*connect) (struct obex_session *os, int *err);
 	void (*progress) (struct obex_session *os, void *user_data);
 	int (*get) (struct obex_session *os, void *user_data);
