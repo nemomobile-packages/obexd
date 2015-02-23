@@ -282,6 +282,7 @@ static struct obex_transport_driver driver = {
 
 static int usb_init(void)
 {
+	uint16_t exclude_mask;
 	struct sigaction sa;
 
 	memset(&sa, 0, sizeof(sa));
@@ -292,6 +293,10 @@ static int usb_init(void)
 	connection = g_dbus_setup_private(DBUS_BUS_SYSTEM, NULL, NULL);
 	if (connection == NULL)
 		return -EPERM;
+
+	exclude_mask = obex_option_exclude(driver.name);
+	if (exclude_mask)
+		driver.service &= ~exclude_mask;
 
 	return obex_transport_driver_register(&driver);
 }
