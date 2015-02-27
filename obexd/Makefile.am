@@ -51,6 +51,11 @@ builtin_modules += pcsuite
 builtin_sources += plugins/pcsuite.c
 endif
 
+if JOLLA_BLACKLIST
+builtin_modules += jolla_blacklist
+builtin_sources += plugins/jolla-blacklist.c
+endif
+
 builtin_modules += opp
 builtin_sources += plugins/opp.c
 
@@ -86,7 +91,7 @@ src_obexd_SOURCES = $(gdbus_sources) $(builtin_sources) $(btio_sources) \
 			src/mimetype.h src/mimetype.c \
 			src/service.h src/service.c \
 			src/transport.h src/transport.c \
-			src/server.h src/server.c
+			src/server.h src/server.c src/access.c
 
 src_obexd_LDADD = @DBUS_LIBS@ @GLIB_LIBS@ @GTHREAD_LIBS@ \
 					@EBOOK_LIBS@ @BLUEZ_LIBS@ \
@@ -212,3 +217,13 @@ noinst_PROGRAMS += tools/test-server
 tools_test_server_SOURCES = $(gobex_sources) $(btio_sources) \
 							tools/test-server.c
 tools_test_server_LDADD = @GLIB_LIBS@ @BLUEZ_LIBS@
+
+if JOLLA_BLACKLIST
+TESTS += unit/test-jolla-blacklist
+noinst_PROGRAMS += unit/test-jolla-blacklist
+
+unit_test_jolla_blacklist_SOURCES = src/access.c src/access.h \
+					src/log.c src/log.h \
+						unit/test-jolla-blacklist.c
+unit_test_jolla_blacklist_LDADD = @GLIB_LIBS@
+endif

@@ -196,4 +196,10 @@ AM_CONDITIONAL(CLIENT, test "${enable_client}" != "no")
 
 AM_CONDITIONAL(READLINE, test "${readline_found}" = "yes")
 
+AC_ARG_ENABLE(jolla-blacklist, AC_HELP_STRING([--enable-jolla-blacklist],
+				[enable jolla-blacklist plugin]), [
+	enable_jolla_blacklist=${enableval}
+])
+AM_CONDITIONAL(JOLLA_BLACKLIST, test "${enable_jolla_blacklist}" = "yes")
+
 AC_OUTPUT(Makefile)
