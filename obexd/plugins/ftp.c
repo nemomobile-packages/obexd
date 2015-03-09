@@ -100,6 +100,8 @@
   </attribute>								\
 "
 
+static uint16_t ftp_version;
+
 static const uint8_t FTP_TARGET[TARGET_SIZE] = {
 			0xF9, 0xEC, 0x7B, 0xC4, 0x95, 0x3C, 0x11, 0xD2,
 			0x98, 0x4E, 0x52, 0x54, 0x00, 0xDC, 0x9E, 0x09 };
@@ -502,6 +504,9 @@ int ftp_action(struct obex_session *os, void *user_data)
 	const char *name, *destname;
 	uint8_t action_id;
 
+	if (ftp_version < 0x0102)
+		return -ENOSYS;
+
 	name = obex_get_name(os);
 	if (name == NULL || !is_filename(name))
 		return -EBADR;
@@ -555,8 +560,9 @@ static int ftp_init(void)
 	GKeyFile *config = NULL;
 	GError *err = NULL;
 	gchar *s = NULL;
-	uint16_t version = 0x0100;
 	int ret = 0;
+
+	ftp_version = 0x0100;
 
 	config = g_key_file_new();
 	if (config == NULL)
@@ -572,19 +578,19 @@ static int ftp_init(void)
 		g_error_free(err);
 		err = NULL;
 	} else {
-		version = strtol(s, NULL, 16);
+		ftp_version = strtol(s, NULL, 16);
 		g_free(s);
 	}
 
 init:
 	if (asprintf(&ftp.record, FTP_RECORD,
-			version,
-			version >= 0x0102 ? FTP_RECORD_PSM : "") < 0) {
+			ftp_version,
+			ftp_version >= 0x0102 ? FTP_RECORD_PSM : "") < 0) {
 		ftp.record = NULL;
 		ret = -ENOMEM;
 	}
 
-	if (version >= 0x0102)
+	if (ftp_version >= 0x0102)
 		ftp.port = OBEX_PORT_RANDOM;
 
 	g_key_file_free(config);
